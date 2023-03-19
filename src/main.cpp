@@ -1,3 +1,6 @@
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
@@ -17,8 +20,10 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
+
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -43,6 +48,12 @@ struct PointLight {
     float linear;
     float quadratic;
 };
+
+struct ProgramState{
+    bool ImGuiEnabled = false;
+};
+ProgramState* programState;
+void drawImgui(ProgramState* programState);
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -74,6 +85,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window,key_callback);
 
     // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -89,9 +101,19 @@ int main()
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui::StyleColorsLight();
+    ImGui_ImplGlfw_InitForOpenGL(window,true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+
+    programState = new ProgramState;
 
     // build and compile our shader zprogram
     // ------------------------------------
@@ -315,6 +337,11 @@ int main()
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
 
+        if(programState->ImGuiEnabled){
+            drawImgui(programState);
+        }
+
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -325,6 +352,12 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+
+    //ImGui cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    delete programState;
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -375,7 +408,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    if(programState->ImGuiEnabled == false) {
+        camera.ProcessMouseMovement(xoffset, yoffset);
+    }
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
@@ -420,4 +455,32 @@ unsigned int loadTexture(char const * path)
 
     return textureID;
 }
+void drawImgui(ProgramState* programState){
+    //init
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
+    {
+        static float f = 0.0f;
+        ImGui::Begin("Window");
+        ImGui::Text("Hello");
+        ImGui::DragFloat("Demo slider",&f,0.05f,0.0,1.0);
+        ImGui::End();
+    }
+
+    //render
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods){
+    if(key == GLFW_KEY_F1 && action == GLFW_PRESS){
+        programState->ImGuiEnabled = !programState->ImGuiEnabled;
+        if(programState->ImGuiEnabled){
+            glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+        }
+        else{
+            glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+        }
+    }
+}
