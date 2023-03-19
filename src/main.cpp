@@ -23,6 +23,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
+unsigned int loadCubemap(vector<std::string> faces);
+
 
 
 // settings
@@ -121,6 +123,8 @@ int main()
                      "resources/shaders/fragShader.fs");
     Shader poklonShader("resources/shaders/poklon.vs",
                         "resources/shaders/poklon.fs");
+    Shader skyboxShader("resources/shaders/skybox.vs",
+                        "resources/shaders/skybox.fs");
 
 
     //ucitavanje modela
@@ -130,6 +134,8 @@ int main()
     levoOstrvo.SetShaderTextureNamePrefix("material.");
     Model desnoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/untitled2.obj"));
     desnoOstrvo.SetShaderTextureNamePrefix("material.");
+    Model dalekoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/plain.obj"));
+    dalekoOstrvo.SetShaderTextureNamePrefix("material.");
     Model snezana(FileSystem::getPath("resources/objects/SneskoGorl/sneska.obj"));
     snezana.SetShaderTextureNamePrefix("material.");
     Model sanke(FileSystem::getPath("resources/objects/Sanke/sanke.obj"));
@@ -196,6 +202,51 @@ int main()
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
     };
 
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -211,11 +262,35 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/gift.jpg").c_str());
 
+    vector<std::string> faces
+    {
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1rt.tga"),
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1lf.tga"),
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1up.tga"),
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1dn.tga"),
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1ft.tga"),
+                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1bk.tga")
+
+    };
+    unsigned int cubemapTexture = loadCubemap(faces);
+    
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
 
+    skyboxShader.use();
+    skyboxShader.setInt("skybox",0);
 
 
     // render loop
@@ -287,6 +362,13 @@ int main()
         ourShader.setMat4("model", model);
         desnoOstrvo.Draw(ourShader);
 
+        //daleko ostrvo
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,glm::vec3(-5.0f,-3.0f,-3.0f));
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+        ourShader.setMat4("model", model);
+        dalekoOstrvo.Draw(ourShader);
+
         //snezana
         model = glm::mat4 (1.0f);
         model = glm::translate(model,glm::vec3(5.3f,-1.5f,0.8f));
@@ -311,7 +393,7 @@ int main()
         jelka.Draw(ourShader);
 
 
-        // render boxes
+        //renderovanje poklona
         poklonShader.use();
         poklonShader.setMat4("projection",projection);
         poklonShader.setMat4("view",view);
@@ -337,6 +419,20 @@ int main()
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
 
+        // draw skybox as last
+        glDepthFunc(GL_LEQUAL);
+        skyboxShader.use();
+        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        skyboxShader.setMat4("view", view);
+        skyboxShader.setMat4("projection", projection);
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS);
+
         if(programState->ImGuiEnabled){
             drawImgui(programState);
         }
@@ -352,6 +448,9 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVAO);
+
 
     //ImGui cleanup
     ImGui_ImplOpenGL3_Shutdown();
@@ -483,4 +582,33 @@ void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods){
             glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
         }
     }
+}
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
