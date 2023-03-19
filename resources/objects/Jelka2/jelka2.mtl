@@ -1,0 +1,76 @@
+# Blender 3.4.1 MTL File: 'untitled.blend'
+# www.blender.org
+
+newmtl MAT_BLUE
+Ka 1.000000 1.000000 1.000000
+Ks 0.800000 0.800000 0.800000
+Ke 0.057208 0.235973 0.710554
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ChristmasTree_2021_ball_MAT_Red_BaseColor.png.002.png
+map_Ns ChristmasTree_2021_ball_MAT_Red_Roughness.png
+map_refl ChristmasTree_2021_ball_MAT_Red_Metallic.png
+
+newmtl MAT_Red
+Ka 1.000000 1.000000 1.000000
+Ks 0.909091 0.909091 0.909091
+Ke 0.661864 0.005596 0.006841
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ChristmasTree_2021_ball_MAT_Red_BaseColor.png
+map_Ns ChristmasTree_2021_ball_MAT_Red_Roughness.png
+map_refl ChristmasTree_2021_ball_MAT_Red_Metallic.png
+
+newmtl MAT_Simple
+Ka 1.000000 1.000000 1.000000
+Ks 0.195455 0.195455 0.195455
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ChristmasTree_2021_v2_MAT_TreeWinter_BaseColor.png.002.png
+map_Ns ChristmasTree_2021_v2_MAT_TreeWinter_Roughness.png
+
+newmtl MAT_Snow
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.168182 0.168182 0.168182
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd sneg.jpeg
+
+newmtl MAT_WHITE
+Ka 1.000000 1.000000 1.000000
+Ks 0.831818 0.831818 0.831818
+Ke 1.000000 1.000000 1.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ChristmasTree_2021_ball_MAT_Red_BaseColor.png.003.png
+map_Ns ChristmasTree_2021_ball_MAT_Red_Roughness.png
+map_refl ChristmasTree_2021_ball_MAT_Red_Metallic.png
+
+newmtl MAT_Wood
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd images.jpeg
+
+newmtl MAT_YEL
+Ka 1.000000 1.000000 1.000000
+Ks 0.886364 0.886364 0.886364
+Ke 0.748402 0.710010 0.009291
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ChristmasTree_2021_ball_MAT_Red_BaseColor.png.001.png
+map_Ns ChristmasTree_2021_ball_MAT_Red_Roughness.png
+map_refl ChristmasTree_2021_ball_MAT_Red_Metallic.png

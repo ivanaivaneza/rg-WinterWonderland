@@ -1,4 +1,4 @@
-# Install script for directory: /home/ivana/project_base/libs/glad
+# Install script for directory: /home/ivana/Desktop/rg-WinterWonderland/libs/glad
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
