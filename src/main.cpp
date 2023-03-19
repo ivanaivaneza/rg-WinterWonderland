@@ -14,6 +14,7 @@
 #include <learnopengl/model.h>
 #include <learnopengl/camera.h>
 
+
 #include <iostream>
 #include <cmath>
 
@@ -276,16 +277,19 @@ int main()
 
     vector<std::string> faces
     {
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1rt.tga"),
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1lf.tga"),
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1up.tga"),
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1dn.tga"),
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1ft.tga"),
-                    FileSystem::getPath("resources/textures/skybox/roze/winterskyday1bk.tga")
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_rt.png"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_lf.png"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_up.png"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_dn.png"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_ft.png"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_bk.png")
 
     };
+
     unsigned int cubemapTexture = loadCubemap(faces);
-    
+
+    //ourShader.use();
+
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
 
@@ -414,10 +418,12 @@ int main()
         glBindVertexArray(VAO);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
         model = glm::mat4(1.0f);
-        model = glm::translate(model,glm::vec3(-1.5f,-0.5f,0.3f));
-        model = glm::scale(model,glm::vec3(0.5f,0.5f,0.5f));
+        model = glm::translate(model,glm::vec3(-1.0f,-0.5f,0.3f));
+        model = glm::scale(model,glm::vec3(0.4f,0.4f,0.4f));
+        model = glm::rotate(model,glm::radians((float)-65),glm::vec3(0.0f,1.0f,0.0f));
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
+
 
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);
