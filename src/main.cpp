@@ -309,15 +309,15 @@ int main()
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/gift.jpg").c_str());
 
     vector<std::string> faces
-    {
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_rt.png"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_lf.png"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_up.png"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_dn.png"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_ft.png"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_bk.png")
+            {
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_rt.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_lf.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_up.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_dn.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_ft.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_bk.tga")
 
-    };
+            };
 
     unsigned int cubemapTexture = loadCubemap(faces);
 
