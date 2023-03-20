@@ -54,7 +54,28 @@ struct PointLight {
 
 struct ProgramState{
     bool ImGuiEnabled = false;
+    glm::vec3 pingvinPosition = glm::vec3(-3.5f,0.0f,-4.0f);
+    //glm::vec3 pingvinPosition = glm::vec3(1.0f);
+
+    void LoadFromDisk(std::string path);
+    void SaveToDisk(std::string path);
 };
+void ProgramState::SaveToDisk(std::string path) {
+    std::ofstream out(path);
+    out << ImGuiEnabled << '\n'
+        << pingvinPosition.x << '\n'
+        << pingvinPosition.y << '\n'
+        << pingvinPosition.z << '\n';
+}
+void ProgramState::LoadFromDisk(std::string path) {
+    std::ifstream in(path);
+    if(in){
+        in >> ImGuiEnabled
+        >> pingvinPosition.x
+        >> pingvinPosition.y
+        >> pingvinPosition.z;
+    }
+}
 ProgramState* programState;
 void drawImgui(ProgramState* programState);
 
@@ -117,6 +138,12 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     programState = new ProgramState;
+    programState->LoadFromDisk("resources/programState.txt");
+
+    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+    if(programState->ImGuiEnabled){
+        glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+    }
 
     // build and compile our shader zprogram
     // ------------------------------------
@@ -141,9 +168,15 @@ int main()
     snezana.SetShaderTextureNamePrefix("material.");
     Model sanke(FileSystem::getPath("resources/objects/Sanke/sanke.obj"));
     sanke.SetShaderTextureNamePrefix("material.");
-    //Model jelen(FileSystem::getPath("resources/objects/Zivotinje/jelenponovo.obj"));
     Model jelka(FileSystem::getPath("resources/objects/Jelka2/jelka.obj"));
     jelka.SetShaderTextureNamePrefix("material.");
+    Model putokaz(FileSystem::getPath("resources/objects/Putokaz/poll.obj"));
+    putokaz.SetShaderTextureNamePrefix("material.");
+    Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/pingvin.obj"));
+    pingvin.SetShaderTextureNamePrefix("material.");
+    Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"));
+    dedaMraz.SetShaderTextureNamePrefix("material.");
+
 
     PointLight pointLight;
     pointLight.ambient = glm::vec3(1.2, 1.0, 1.0);
@@ -396,6 +429,31 @@ int main()
         ourShader.setMat4("model", model);
         jelka.Draw(ourShader);
 
+        //putokaz
+        model = glm::mat4 (1.0f);
+        model = glm::translate(model,glm::vec3(6.2f,-1.5f,-0.9f));
+        model = glm::scale(model, glm::vec3(0.6f, 0.6f, 0.6f));
+        ourShader.setMat4("model", model);
+        putokaz.Draw(ourShader);
+
+        //pingvin
+        model = glm::mat4(1.0f);
+        //model = glm::translate(model,glm::vec3(-3.5f,0.0f,-4.0f));
+        model = glm::translate(model,programState->pingvinPosition);
+        model = glm::scale(model,glm::vec3(0.3f,0.3f,0.3f));
+        //model = glm::rotate(model,(float)glfwGetTime(),glm::vec3(1.0f,0.0f,0.0f));
+        ourShader.setMat4("model", model);
+        pingvin.Draw(ourShader);
+
+
+        //deda
+        /*model = glm::mat4(1.0f);
+        model = glm::translate(model,glm::vec3(-5.0f,-1.55f,-3.0f));
+        model = glm::scale(model, glm::vec3(0.005f, 0.005f, 0.005f));
+        ourShader.setMat4("model", model);
+        dedaMraz.Draw(ourShader);*/
+
+
 
         //renderovanje poklona
         poklonShader.use();
@@ -457,6 +515,7 @@ int main()
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVAO);
 
+    programState->SaveToDisk("resources/programState.txt");
 
     //ImGui cleanup
     ImGui_ImplOpenGL3_Shutdown();
@@ -567,10 +626,9 @@ void drawImgui(ProgramState* programState){
     ImGui::NewFrame();
 
     {
-        static float f = 0.0f;
         ImGui::Begin("Window");
-        ImGui::Text("Hello");
-        ImGui::DragFloat("Demo slider",&f,0.05f,0.0,1.0);
+        ImGui::Text("You can move the penguin");
+        ImGui::DragFloat3("Penguin position",(float*)&programState->pingvinPosition);
         ImGui::End();
     }
 
