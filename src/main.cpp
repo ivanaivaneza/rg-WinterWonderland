@@ -137,8 +137,11 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
 
     programState = new ProgramState;
     programState->LoadFromDisk("resources/programState.txt");
@@ -297,14 +300,14 @@ int main()
             1.0f,  0.5f,  0.0f,  1.0f,  0.0f
     };
 
-    unsigned int VBO, VAO;
+    unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
 
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -463,12 +466,15 @@ int main()
         dalekoOstrvo.Draw(ourShader);
 
         //snezana
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         model = glm::mat4 (1.0f);
         model = glm::translate(model,glm::vec3(5.3f,-1.5f,0.8f));
         model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
         //model = glm::rotate(model,(float)glfwGetTime(),glm::vec3(1.0f,0.0f,0.0f));
         ourShader.setMat4("model", model);
         snezana.Draw(ourShader);
+        glDisable(GL_CULL_FACE);
 
         //sanke
         model = glm::mat4 (1.0f);
@@ -486,11 +492,14 @@ int main()
         jelka.Draw(ourShader);
 
         //putokaz
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         model = glm::mat4 (1.0f);
         model = glm::translate(model,glm::vec3(6.2f,-1.5f,-0.9f));
         model = glm::scale(model, glm::vec3(0.6f, 0.6f, 0.6f));
         ourShader.setMat4("model", model);
         putokaz.Draw(ourShader);
+        glDisable(GL_CULL_FACE);
 
         //pingvin
         model = glm::mat4(1.0f);
@@ -512,6 +521,8 @@ int main()
 
 
         //renderovanje poklona
+        //glEnable(GL_CULL_FACE);
+        //glCullFace(GL_BACK);
         poklonShader.use();
         poklonShader.setMat4("projection",projection);
         poklonShader.setMat4("view",view);
@@ -529,14 +540,17 @@ int main()
         poklonShader.setFloat("material.shininess", 64.0f);
 
 
+
         glBindVertexArray(VAO);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
         model = glm::mat4(1.0f);
         model = glm::translate(model,glm::vec3(-1.0f,-0.5f,0.3f));
         model = glm::scale(model,glm::vec3(0.4f,0.4f,0.4f));
-        model = glm::rotate(model,glm::radians((float)-65),glm::vec3(0.0f,1.0f,0.0f));
+        //model = glm::rotate(model,glm::radians((float)-65),glm::vec3(0.0f,1.0f,0.0f));
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
+        //glDisable(GL_CULL_FACE);
 
         //snowflakes
         flakeShader.use();
@@ -551,8 +565,8 @@ int main()
             model = glm::scale(model,glm::vec3(0.5f,0.5f,0.5f));
             ourShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
 
+        }
 
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);
@@ -567,6 +581,7 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
+
 
         if(programState->ImGuiEnabled){
             drawImgui(programState);
