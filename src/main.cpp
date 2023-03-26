@@ -156,6 +156,8 @@ int main()
                         "resources/shaders/poklon.fs");
     Shader skyboxShader("resources/shaders/skybox.vs",
                         "resources/shaders/skybox.fs");
+    Shader flakeShader("resources/shaders/flake.vs",
+                       "resources/shaders/flake.fs");
 
 
     //ucitavanje modela
@@ -339,7 +341,9 @@ int main()
                     glm::vec3( 3.5f, 4.0f, 1.51f),
                     glm::vec3( 2.0f, 1.5f, 0.7f),
                     glm::vec3(-4.3f, 3.5f, -2.3f),
-                    glm::vec3( 5.5f, 4.5f, -1.6f)
+                    glm::vec3( 6.0f, 4.5f, -1.6f),
+                    glm::vec3( 0.0f, 4.0f, -1.6f)
+
             };
 
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/gift.jpg").c_str());
@@ -361,13 +365,16 @@ int main()
     unsigned int cubemapTexture = loadCubemap(faces);
 
 
-    ourShader.use();
+    //ourShader.use();
 
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
 
     skyboxShader.use();
     skyboxShader.setInt("skybox",0);
+
+    flakeShader.use();
+    flakeShader.setInt("texture1", 0);
 
 
     // render loop
@@ -532,12 +539,16 @@ int main()
         glDrawArrays(GL_TRIANGLES,0,36);
 
         //snowflakes
+        flakeShader.use();
+        flakeShader.setMat4("projection",projection);
+        flakeShader.setMat4("view",view);
         glBindVertexArray(transparentVAO);
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
         for (const glm::vec3& f : flakes)
         {
             model = glm::mat4(1.0f);
             model = glm::translate(model, f);
+            model = glm::scale(model,glm::vec3(0.5f,0.5f,0.5f));
             ourShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
