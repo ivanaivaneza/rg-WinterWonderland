@@ -123,7 +123,8 @@ int main()
     }
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
+    //stbi_set_flip_vertically_on_load(true);
+
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -136,6 +137,8 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     programState = new ProgramState;
     programState->LoadFromDisk("resources/programState.txt");
@@ -145,7 +148,7 @@ int main()
         glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
     }
 
-    // build and compile our shader zprogram
+    // build and compile our shader program
     // ------------------------------------
     Shader ourShader("resources/shaders/verShader.vs",
                      "resources/shaders/fragShader.fs");
@@ -172,10 +175,10 @@ int main()
     jelka.SetShaderTextureNamePrefix("material.");
     Model putokaz(FileSystem::getPath("resources/objects/Putokaz/poll.obj"));
     putokaz.SetShaderTextureNamePrefix("material.");
-    Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/pingvin.obj"));
+    Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/penguin.obj"));
     pingvin.SetShaderTextureNamePrefix("material.");
-    Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"));
-    dedaMraz.SetShaderTextureNamePrefix("material.");
+    //Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"));
+    //dedaMraz.SetShaderTextureNamePrefix("material.");
 
 
     PointLight pointLight;
@@ -281,6 +284,17 @@ int main()
             1.0f, -1.0f,  1.0f
     };
 
+    float transparentVertices[] = {
+            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -296,6 +310,7 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
+    //skybox
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
@@ -305,23 +320,48 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
+    //transparent
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+    vector<glm::vec3> flakes
+            {
+                    glm::vec3(-6.5f, 2.0f, -0.48f),
+                    glm::vec3( 3.5f, 4.0f, 1.51f),
+                    glm::vec3( 2.0f, 1.5f, 0.7f),
+                    glm::vec3(-4.3f, 3.5f, -2.3f),
+                    glm::vec3( 5.5f, 4.5f, -1.6f)
+            };
 
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/gift.jpg").c_str());
+    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/snowflake.png").c_str());
+
 
     vector<std::string> faces
             {
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_rt.tga"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_lf.tga"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_up.tga"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_dn.tga"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_ft.tga"),
-                    FileSystem::getPath("resources/textures/skybox/cottoncandy/tga/rcottoncandy_bk.tga")
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_lf.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_rt.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_up.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_dn.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_ft.tga"),
+                    FileSystem::getPath("resources/textures/skybox/cottoncandy/cottoncandy_bk.tga")
 
             };
 
+
     unsigned int cubemapTexture = loadCubemap(faces);
 
-    //ourShader.use();
+
+    ourShader.use();
 
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
@@ -343,6 +383,15 @@ int main()
         // input
         // -----
         processInput(window);
+
+        //sort
+        // -----
+        std::sort(flakes.begin(), flakes.end(),
+                  [cameraPosition = camera.Position](const glm::vec3& a, const glm::vec3& b) {
+                      float d1 = glm::distance(a, cameraPosition);
+                      float d2 = glm::distance(b, cameraPosition);
+                      return d1 > d2;
+                  });
 
         // render
         // ------
@@ -482,6 +531,17 @@ int main()
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
 
+        //snowflakes
+        glBindVertexArray(transparentVAO);
+        glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        for (const glm::vec3& f : flakes)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, f);
+            ourShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
 
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);
@@ -604,8 +664,8 @@ unsigned int loadTexture(char const * path)
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -656,6 +716,7 @@ unsigned int loadCubemap(vector<std::string> faces)
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++)
     {
+
         unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
         if (data)
         {
