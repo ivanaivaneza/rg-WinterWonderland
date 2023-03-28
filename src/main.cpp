@@ -14,7 +14,6 @@
 #include <learnopengl/model.h>
 #include <learnopengl/camera.h>
 
-
 #include <iostream>
 #include <cmath>
 
@@ -25,7 +24,6 @@ void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
 unsigned int loadCubemap(vector<std::string> faces);
-
 
 
 // settings
@@ -55,8 +53,22 @@ struct PointLight {
 struct ProgramState{
     bool ImGuiEnabled = false;
     glm::vec3 pingvinPosition = glm::vec3(-3.5f,0.0f,-4.0f);
-    //glm::vec3 pingvinPosition = glm::vec3(1.0f);
 
+    glm::vec3 directDirection = glm::vec3(-0.2f,-1.0f,-0.3f);
+    glm::vec3 directAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+    glm::vec3 directDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+    glm::vec3 directSpecular = glm::vec3(1.0f,1.0f,1.0f);
+
+    glm::vec3 pointPosition = glm::vec3(0.0f,0.0f,0.0f);
+    glm::vec3 pointAmbient = glm::vec3(0.05f, 0.05f, 0.05f);
+    glm::vec3 pointDiffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+    glm::vec3 pointSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
+    float pointConstant = 1.0f;
+    float pointLinear = 0.9f;
+    float pointQuadratic = 0.032f;
+
+    PointLight pointLight;
+    
     void LoadFromDisk(std::string path);
     void SaveToDisk(std::string path);
 };
@@ -138,8 +150,9 @@ int main()
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // TODO: vidi ovo dole
+   // glEnable(GL_BLEND);
+   // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 
@@ -186,14 +199,14 @@ int main()
     //dedaMraz.SetShaderTextureNamePrefix("material.");
 
 
-    PointLight pointLight;
-    pointLight.ambient = glm::vec3(1.2, 1.0, 1.0);
-    pointLight.diffuse = glm::vec3(0.6, 0.5, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
-    pointLight.position = glm::vec3(4.0, 4.0, 4.0);
+//-4.6f,-1.25f,3.5f
+    // positions of the point lights
+    glm::vec3 pointLightPositions[] = {
+            glm::vec3(programState->pointPosition.x + 1.9f,programState->pointPosition.y + 0.2f,programState->pointPosition.z + 1.2f),
+            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y - 1.3f,programState->pointPosition.z + 1.0f),
+            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y + 2.0f,programState->pointPosition.z + 1.0f),
+            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y + 0.0f ,programState->pointPosition.z + 1.5f)
+    };
 
 
 
@@ -368,7 +381,11 @@ int main()
     unsigned int cubemapTexture = loadCubemap(faces);
 
 
-    //ourShader.use();
+    //Svetlo
+    PointLight& pointLight = programState->pointLight;
+
+    ourShader.use();
+    ourShader.setInt("material.diffuse",0);
 
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
@@ -406,7 +423,6 @@ int main()
         // render
         // ------
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -416,16 +432,48 @@ int main()
         // activate shader
         ourShader.use();
 
-        pointLight.position = glm::vec3(4.0f, 4.0f, 4.0f);
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         ourShader.setVec3("viewPosition", camera.Position);
         ourShader.setFloat("material.shininess", 64.0f);
+        ourShader.setVec3("lightColor",0.0f,0.0f,1.0f);
+
+        /*ourShader.setVec3("dirLight.direction",programState->directDirection);
+        ourShader.setVec3("dirLight.ambient",programState->directAmbient);
+        ourShader.setVec3("dirLight.diffuse",programState->directDiffuse);
+        ourShader.setVec3("dirLight.specular",programState->directSpecular);*/
+
+
+        ourShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+        ourShader.setVec3("pointLights[0].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[0].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[0].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[0].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[0].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[0].quadratic", programState->pointQuadratic);
+
+        // point light 2
+        ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+        ourShader.setVec3("pointLights[1].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[1].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[1].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[1].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[1].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[1].quadratic", programState->pointQuadratic);
+        // point light 3
+        ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+        ourShader.setVec3("pointLights[2].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[2].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[2].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[2].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[2].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[2].quadratic", programState->pointQuadratic);
+        // point light 4
+        ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+        ourShader.setVec3("pointLights[3].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[3].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[3].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[3].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[3].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[3].quadratic", programState->pointQuadratic);
 
         // pass projection matrix to shader (note that in this case it could change every frame)
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -435,9 +483,13 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("view", view);
 
+
+
+
+
         //renderovanje modela
         // main ostrvo
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model = glm::mat4 (1.0f);
         model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
         model = glm::rotate(model,glm::radians((float)-90),glm::vec3(0.0f,1.0f,0.0f));
@@ -551,6 +603,8 @@ int main()
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
         //glDisable(GL_CULL_FACE);
+
+
 
         //snowflakes
         flakeShader.use();
