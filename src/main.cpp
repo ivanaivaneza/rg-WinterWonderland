@@ -57,11 +57,12 @@ struct ProgramState{
     glm::vec3 directDirection = glm::vec3(-0.2f,-1.0f,-0.3f);
     glm::vec3 directAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
     glm::vec3 directDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
-    glm::vec3 directSpecular = glm::vec3(1.0f,1.0f,1.0f);
+    glm::vec3 directSpecular = glm::vec3(0.5f,0.5f,0.5f);
+
 
     glm::vec3 pointPosition = glm::vec3(0.0f,0.0f,0.0f);
     glm::vec3 pointAmbient = glm::vec3(0.05f, 0.05f, 0.05f);
-    glm::vec3 pointDiffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+    glm::vec3 pointDiffuse = glm::vec3(0.6f, 0.532f, 0.470f);
     glm::vec3 pointSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
     float pointConstant = 1.0f;
     float pointLinear = 0.9f;
@@ -200,12 +201,16 @@ int main()
 
 
 //-4.6f,-1.25f,3.5f
+//5.3f,-1.5f,0.8f
+//-2.9f, -0.53f, 0.0f
     // positions of the point lights
     glm::vec3 pointLightPositions[] = {
-            glm::vec3(programState->pointPosition.x + 1.9f,programState->pointPosition.y + 0.2f,programState->pointPosition.z + 1.2f),
-            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y - 1.3f,programState->pointPosition.z + 1.0f),
-            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y + 2.0f,programState->pointPosition.z + 1.0f),
-            glm::vec3(programState->pointPosition.x - 2.9f,programState->pointPosition.y + 0.0f ,programState->pointPosition.z + 1.5f)
+            glm::vec3( 0.1f, 1.4f, 0.0f),
+            glm::vec3( 0.3f, 1.4f, 0.0f),
+            glm::vec3( 0.3f, 0.8f, 1.0f),
+            glm::vec3( 0.3f, 0.8f, 1.0f),
+            glm::vec3( 0.3f, 0.8f, -2.1f),
+            glm::vec3( 0.3f, 0.8f, -2.1f),
     };
 
 
@@ -385,7 +390,8 @@ int main()
     PointLight& pointLight = programState->pointLight;
 
     ourShader.use();
-    ourShader.setInt("material.diffuse",0);
+    ourShader.setInt("material.texture_diffuse1",0);
+    ourShader.setInt("material.texture_specular1",1);
 
     poklonShader.use();
     poklonShader.setInt("material.diffuse",0);
@@ -395,6 +401,7 @@ int main()
 
     flakeShader.use();
     flakeShader.setInt("texture1", 0);
+
 
 
     // render loop
@@ -433,16 +440,27 @@ int main()
         ourShader.use();
 
         ourShader.setVec3("viewPosition", camera.Position);
-        ourShader.setFloat("material.shininess", 64.0f);
-        ourShader.setVec3("lightColor",0.0f,0.0f,1.0f);
 
-        /*ourShader.setVec3("dirLight.direction",programState->directDirection);
-        ourShader.setVec3("dirLight.ambient",programState->directAmbient);
-        ourShader.setVec3("dirLight.diffuse",programState->directDiffuse);
-        ourShader.setVec3("dirLight.specular",programState->directSpecular);*/
+        ourShader.setFloat("material.shininess", 32.0f);
+//        ourShader.setVec3("material.ambient", 0.5f,0.5f,0.31f);
+//        ourShader.setVec3("material.diffuse", 1.0f,1.0f,1.0f);
+//        ourShader.setVec3("material.specular", 0.5f,0.5f,0.5f);
+
+       /* ourShader.setVec3("dirLight.direction",programState->directDirection);
+         ourShader.setVec3("dirLight.ambient",programState->directAmbient);
+         ourShader.setVec3("dirLight.diffuse",programState->directDiffuse);
+         ourShader.setVec3("dirLight.specular",programState->directSpecular);*/
+
+        //postavljanje boje svetla
+        glm::vec3 lightColor;
+        lightColor.x = static_cast<float>(sin(glfwGetTime() * 2.0));
+        lightColor.y = static_cast<float>(sin(glfwGetTime() * 0.7));
+        lightColor.z = static_cast<float>(sin(glfwGetTime() * 1.3));
+        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
 
 
         ourShader.setVec3("pointLights[0].position", pointLightPositions[0]);
+      //  ourShader.setVec3("pointLights[0].color",lightColors[0]);
         ourShader.setVec3("pointLights[0].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[0].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[0].specular", programState->pointSpecular);
@@ -452,6 +470,7 @@ int main()
 
         // point light 2
         ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
+    //    ourShader.setVec3("pointLights[1].color",lightColors[1]);
         ourShader.setVec3("pointLights[1].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[1].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[1].specular", programState->pointSpecular);
@@ -460,6 +479,7 @@ int main()
         ourShader.setFloat("pointLights[1].quadratic", programState->pointQuadratic);
         // point light 3
         ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
+  //      ourShader.setVec3("pointLights[2].color",lightColors[2]);
         ourShader.setVec3("pointLights[2].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[2].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[2].specular", programState->pointSpecular);
@@ -468,6 +488,7 @@ int main()
         ourShader.setFloat("pointLights[2].quadratic", programState->pointQuadratic);
         // point light 4
         ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
+//        ourShader.setVec3("pointLights[3].color",lightColors[3]);
         ourShader.setVec3("pointLights[3].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[3].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[3].specular", programState->pointSpecular);
@@ -475,21 +496,40 @@ int main()
         ourShader.setFloat("pointLights[3].linear", programState->pointLinear);
         ourShader.setFloat("pointLights[3].quadratic", programState->pointQuadratic);
 
-        // pass projection matrix to shader (note that in this case it could change every frame)
+         // point light 5
+        ourShader.setVec3("pointLights[4].position", pointLightPositions[4]);
+//        ourShader.setVec3("pointLights[4].color",lightColors[3]);
+        ourShader.setVec3("pointLights[4].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[4].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[4].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[4].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[4].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[4].quadratic", programState->pointQuadratic);
+
+         // point light 6
+        ourShader.setVec3("pointLights[5].position", pointLightPositions[5]);
+//        ourShader.setVec3("pointLights[3].color",lightColors[3]);
+        ourShader.setVec3("pointLights[5].ambient", programState->pointAmbient);
+        ourShader.setVec3("pointLights[5].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[5].specular", programState->pointSpecular);
+        ourShader.setFloat("pointLights[5].constant", programState->pointConstant);
+        ourShader.setFloat("pointLights[5].linear", programState->pointLinear);
+        ourShader.setFloat("pointLights[5].quadratic", programState->pointQuadratic);
+
+
+
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        ourShader.setMat4("projection", projection);
-
-        // camera/view transformation
         glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4 (1.0f);
+
+        ourShader.use();
+        ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
-
-
-
+        ourShader.setMat4("model", model);
 
 
         //renderovanje modela
         // main ostrvo
-        glm::mat4 model = glm::mat4 (1.0f);
         model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
         model = glm::rotate(model,glm::radians((float)-90),glm::vec3(0.0f,1.0f,0.0f));
@@ -571,7 +611,6 @@ int main()
         dedaMraz.Draw(ourShader);*/
 
 
-
         //renderovanje poklona
         //glEnable(GL_CULL_FACE);
         //glCullFace(GL_BACK);
@@ -592,7 +631,6 @@ int main()
         poklonShader.setFloat("material.shininess", 64.0f);
 
 
-
         glBindVertexArray(VAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
@@ -603,6 +641,7 @@ int main()
         poklonShader.setMat4("model",model);
         glDrawArrays(GL_TRIANGLES,0,36);
         //glDisable(GL_CULL_FACE);
+
 
 
 
@@ -617,7 +656,7 @@ int main()
             model = glm::mat4(1.0f);
             model = glm::translate(model, f);
             model = glm::scale(model,glm::vec3(0.5f,0.5f,0.5f));
-            ourShader.setMat4("model", model);
+            flakeShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
         }
