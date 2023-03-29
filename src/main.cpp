@@ -25,6 +25,8 @@ void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
 unsigned int loadCubemap(vector<std::string> faces);
 
+bool blinn = false;
+bool blinnKeyPressed = false;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -54,7 +56,7 @@ struct ProgramState{
     bool ImGuiEnabled = false;
     glm::vec3 pingvinPosition = glm::vec3(-3.5f,0.0f,-4.0f);
 
-    glm::vec3 directDirection = glm::vec3(-0.2f,-1.0f,-0.3f);
+    glm::vec3 directDirection = glm::vec3(-1.0f,-0.2f,0.0f);
     glm::vec3 directAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
     glm::vec3 directDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
     glm::vec3 directSpecular = glm::vec3(0.5f,0.5f,0.5f);
@@ -62,10 +64,10 @@ struct ProgramState{
 
     glm::vec3 pointPosition = glm::vec3(0.0f,0.0f,0.0f);
     glm::vec3 pointAmbient = glm::vec3(0.05f, 0.05f, 0.05f);
-    glm::vec3 pointDiffuse = glm::vec3(0.6f, 0.532f, 0.470f);
+    glm::vec3 pointDiffuse = glm::vec3(0.8f, 0.6f, 0.6f);
     glm::vec3 pointSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
     float pointConstant = 1.0f;
-    float pointLinear = 0.9f;
+    float pointLinear = 0.75f;
     float pointQuadratic = 0.032f;
 
     PointLight pointLight;
@@ -440,16 +442,19 @@ int main()
         ourShader.use();
 
         ourShader.setVec3("viewPosition", camera.Position);
+        ourShader.setInt("blinn",blinn);
+
+        //std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
 
         ourShader.setFloat("material.shininess", 32.0f);
 //        ourShader.setVec3("material.ambient", 0.5f,0.5f,0.31f);
 //        ourShader.setVec3("material.diffuse", 1.0f,1.0f,1.0f);
 //        ourShader.setVec3("material.specular", 0.5f,0.5f,0.5f);
 
-       /* ourShader.setVec3("dirLight.direction",programState->directDirection);
+        ourShader.setVec3("dirLight.direction",programState->directDirection);
          ourShader.setVec3("dirLight.ambient",programState->directAmbient);
          ourShader.setVec3("dirLight.diffuse",programState->directDiffuse);
-         ourShader.setVec3("dirLight.specular",programState->directSpecular);*/
+         ourShader.setVec3("dirLight.specular",programState->directSpecular);
 
         //postavljanje boje svetla
         glm::vec3 lightColor;
@@ -461,8 +466,8 @@ int main()
 
         ourShader.setVec3("pointLights[0].position", pointLightPositions[0]);
       //  ourShader.setVec3("pointLights[0].color",lightColors[0]);
-        ourShader.setVec3("pointLights[0].ambient", programState->pointAmbient);
-        ourShader.setVec3("pointLights[0].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[0].ambient", programState->pointAmbient * diffuseColor);
+        ourShader.setVec3("pointLights[0].diffuse", diffuseColor);
         ourShader.setVec3("pointLights[0].specular", programState->pointSpecular);
         ourShader.setFloat("pointLights[0].constant", programState->pointConstant);
         ourShader.setFloat("pointLights[0].linear", programState->pointLinear);
@@ -471,8 +476,8 @@ int main()
         // point light 2
         ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
     //    ourShader.setVec3("pointLights[1].color",lightColors[1]);
-        ourShader.setVec3("pointLights[1].ambient", programState->pointAmbient);
-        ourShader.setVec3("pointLights[1].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[1].ambient", programState->pointAmbient * diffuseColor);
+        ourShader.setVec3("pointLights[1].diffuse", diffuseColor);
         ourShader.setVec3("pointLights[1].specular", programState->pointSpecular);
         ourShader.setFloat("pointLights[1].constant", programState->pointConstant);
         ourShader.setFloat("pointLights[1].linear", programState->pointLinear);
@@ -724,6 +729,17 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed)
+    {
+        blinn = !blinn;
+        blinnKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+    {
+        blinnKeyPressed = false;
+    }
+
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
@@ -810,6 +826,7 @@ void drawImgui(ProgramState* programState){
         ImGui::DragFloat3("Penguin position",(float*)&programState->pingvinPosition);
         ImGui::End();
     }
+
 
     //render
     ImGui::Render();
