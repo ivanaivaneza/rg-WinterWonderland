@@ -465,7 +465,6 @@ int main()
 
 
         ourShader.setVec3("pointLights[0].position", pointLightPositions[0]);
-      //  ourShader.setVec3("pointLights[0].color",lightColors[0]);
         ourShader.setVec3("pointLights[0].ambient", programState->pointAmbient * diffuseColor);
         ourShader.setVec3("pointLights[0].diffuse", diffuseColor);
         ourShader.setVec3("pointLights[0].specular", programState->pointSpecular);
@@ -475,7 +474,6 @@ int main()
 
         // point light 2
         ourShader.setVec3("pointLights[1].position", pointLightPositions[1]);
-    //    ourShader.setVec3("pointLights[1].color",lightColors[1]);
         ourShader.setVec3("pointLights[1].ambient", programState->pointAmbient * diffuseColor);
         ourShader.setVec3("pointLights[1].diffuse", diffuseColor);
         ourShader.setVec3("pointLights[1].specular", programState->pointSpecular);
