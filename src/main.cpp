@@ -29,16 +29,18 @@ void renderQuad();
 
 bool blinn = true;
 bool blinnKeyPressed = false;
-bool hdr = true;
+bool hdr = false;
 bool hdrKeyPressed = false;
 float exposure = 1.0f;
+bool bloom = false;
+bool bloomKeyPressed = false;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(-0.5f, 1.0f, 12.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -184,6 +186,8 @@ int main()
                        "resources/shaders/flake.fs");
     Shader hdrShader("resources/shaders/hdr.vs",
                      "resources/shaders/hdr.fs");
+    Shader bloomShader("resources/shaders/blur.vs",
+                       "resources/shaders/blur.fs");
 
 
     //ucitavanje modela
@@ -409,32 +413,63 @@ int main()
     flakeShader.use();
     flakeShader.setInt("texture1", 0);
 
+    bloomShader.use();
+    bloomShader.setInt("image",0);
+
     hdrShader.use();
     hdrShader.setInt("hdrBuffer",0);
+    hdrShader.setInt("bloomBlur",1);
 
 
     //hdr
     unsigned int hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
-    // create floating point color buffer
-    unsigned int colorBuffer;
-    glGenTextures(1, &colorBuffer);
-    glBindTexture(GL_TEXTURE_2D, colorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // create depth buffer (renderbuffer)
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+
+    unsigned int colorBuffers[2];
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // attach texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+    // create and attach depth buffer (renderbuffer)
     unsigned int rboDepth;
     glGenRenderbuffers(1, &rboDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
-    // attach buffers
-    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    // color attachments we'll use for rendering
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer not complete!" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // ping-pong-framebuffer for blurring
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongColorbuffers[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongColorbuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongColorbuffers[i], 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "Framebuffer not complete!" << std::endl;
+    }
 
     // render loop
     // -----------
@@ -512,8 +547,8 @@ int main()
         ourShader.setFloat("pointLights[1].quadratic", programState->pointQuadratic);
         // point light 3
         ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
-        ourShader.setVec3("pointLights[2].ambient", programState->pointAmbient);
-        ourShader.setVec3("pointLights[2].diffuse", programState->pointDiffuse);
+        ourShader.setVec3("pointLights[2].ambient", programState->pointAmbient * diffuseColor);
+        ourShader.setVec3("pointLights[2].diffuse", diffuseColor);
         ourShader.setVec3("pointLights[2].specular", programState->pointSpecular);
         ourShader.setFloat("pointLights[2].constant", programState->pointConstant);
         ourShader.setFloat("pointLights[2].linear", programState->pointLinear);
@@ -556,6 +591,8 @@ int main()
 
 
         //renderovanje modela
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         // main ostrvo
         model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
@@ -585,15 +622,13 @@ int main()
         dalekoOstrvo.Draw(ourShader);
 
         //snezana
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
         model = glm::mat4 (1.0f);
         model = glm::translate(model,glm::vec3(5.3f,-1.5f,0.8f));
         model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
         //model = glm::rotate(model,(float)glfwGetTime(),glm::vec3(1.0f,0.0f,0.0f));
         ourShader.setMat4("model", model);
         snezana.Draw(ourShader);
-        glDisable(GL_CULL_FACE);
+
 
         //sanke
         model = glm::mat4 (1.0f);
@@ -611,14 +646,13 @@ int main()
         jelka.Draw(ourShader);
 
         //putokaz
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+
         model = glm::mat4 (1.0f);
         model = glm::translate(model,glm::vec3(6.2f,-1.5f,-0.9f));
         model = glm::scale(model, glm::vec3(0.6f, 0.6f, 0.6f));
         ourShader.setMat4("model", model);
         putokaz.Draw(ourShader);
-        glDisable(GL_CULL_FACE);
+
 
         //pingvin
         model = glm::mat4(1.0f);
@@ -628,7 +662,7 @@ int main()
         //model = glm::rotate(model,(float)glfwGetTime(),glm::vec3(1.0f,0.0f,0.0f));
         ourShader.setMat4("model", model);
         pingvin.Draw(ourShader);
-
+        glDisable(GL_CULL_FACE);
 
         //deda
         /*model = glm::mat4(1.0f);
@@ -702,18 +736,38 @@ int main()
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
 
+        //load ping-pong
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        bool horizontal = true, first_iteration = true;
+        unsigned int amount = 10;
+        bloomShader.use();
+        for (unsigned int i = 0; i < amount; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            bloomShader.setInt("horizontal", horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);
 
-        // load hdr
+            renderQuad();
+
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+
+        // load hdr and bloom
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         hdrShader.use();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorBuffer);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
         hdrShader.setBool("hdr", hdr);
+        hdrShader.setBool("bloom",bloom);
         hdrShader.setFloat("exposure", exposure);
         renderQuad();
 
-        //std::cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << std::endl;
+       // std::cout << "bloom: " << (bloom ? "on" : "off") << "| exposure: " << exposure << std::endl;
 
 
         if(programState->ImGuiEnabled){
@@ -824,7 +878,15 @@ void processInput(GLFWwindow *window)
     {
         exposure += 0.001f;
     }
-
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !bloomKeyPressed)
+    {
+        bloom = !bloom;
+        bloomKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
+    {
+        bloomKeyPressed = false;
+    }
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
