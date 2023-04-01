@@ -24,9 +24,14 @@ void key_callback(GLFWwindow* window,int key,int scancode,int action,int mods);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
 unsigned int loadCubemap(vector<std::string> faces);
+void renderQuad();
 
-bool blinn = false;
+
+bool blinn = true;
 bool blinnKeyPressed = false;
+bool hdr = true;
+bool hdrKeyPressed = false;
+float exposure = 1.0f;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -177,26 +182,28 @@ int main()
                         "resources/shaders/skybox.fs");
     Shader flakeShader("resources/shaders/flake.vs",
                        "resources/shaders/flake.fs");
+    Shader hdrShader("resources/shaders/hdr.vs",
+                     "resources/shaders/hdr.fs");
 
 
     //ucitavanje modela
-    Model mainOstrvo(FileSystem::getPath("resources/objects/Ostrvo/plain.obj"));
+    Model mainOstrvo(FileSystem::getPath("resources/objects/Ostrvo/plain.obj"),true);
     mainOstrvo.SetShaderTextureNamePrefix("material.");
-    Model levoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/untitled2.obj"));
+    Model levoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/untitled2.obj"),true);
     levoOstrvo.SetShaderTextureNamePrefix("material.");
-    Model desnoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/untitled2.obj"));
+    Model desnoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/untitled2.obj"), true);
     desnoOstrvo.SetShaderTextureNamePrefix("material.");
-    Model dalekoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/plain.obj"));
+    Model dalekoOstrvo(FileSystem::getPath("resources/objects/Ostrvo/plain.obj"), true);
     dalekoOstrvo.SetShaderTextureNamePrefix("material.");
-    Model snezana(FileSystem::getPath("resources/objects/SneskoGorl/sneska.obj"));
+    Model snezana(FileSystem::getPath("resources/objects/SneskoGorl/sneska.obj"), true);
     snezana.SetShaderTextureNamePrefix("material.");
-    Model sanke(FileSystem::getPath("resources/objects/Sanke/sanke.obj"));
+    Model sanke(FileSystem::getPath("resources/objects/Sanke/sanke.obj"), true);
     sanke.SetShaderTextureNamePrefix("material.");
-    Model jelka(FileSystem::getPath("resources/objects/Jelka2/jelka.obj"));
+    Model jelka(FileSystem::getPath("resources/objects/Jelka2/jelka.obj"), true);
     jelka.SetShaderTextureNamePrefix("material.");
-    Model putokaz(FileSystem::getPath("resources/objects/Putokaz/poll.obj"));
+    Model putokaz(FileSystem::getPath("resources/objects/Putokaz/poll.obj"), true);
     putokaz.SetShaderTextureNamePrefix("material.");
-    Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/penguin.obj"));
+    Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/penguin.obj"), true);
     pingvin.SetShaderTextureNamePrefix("material.");
     //Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"));
     //dedaMraz.SetShaderTextureNamePrefix("material.");
@@ -387,8 +394,6 @@ int main()
 
     unsigned int cubemapTexture = loadCubemap(faces);
 
-
-    //Svetlo
     PointLight& pointLight = programState->pointLight;
 
     ourShader.use();
@@ -404,7 +409,32 @@ int main()
     flakeShader.use();
     flakeShader.setInt("texture1", 0);
 
+    hdrShader.use();
+    hdrShader.setInt("hdrBuffer",0);
 
+
+    //hdr
+    unsigned int hdrFBO;
+    glGenFramebuffers(1, &hdrFBO);
+    // create floating point color buffer
+    unsigned int colorBuffer;
+    glGenTextures(1, &colorBuffer);
+    glBindTexture(GL_TEXTURE_2D, colorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // create depth buffer (renderbuffer)
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+    // attach buffers
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // render loop
     // -----------
@@ -434,22 +464,22 @@ int main()
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-        // bind textures on corresponding texture units
-
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // activate shader
         ourShader.use();
 
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
         ourShader.setVec3("viewPosition", camera.Position);
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
         ourShader.setInt("blinn",blinn);
 
         //std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
 
         ourShader.setFloat("material.shininess", 32.0f);
-//        ourShader.setVec3("material.ambient", 0.5f,0.5f,0.31f);
-//        ourShader.setVec3("material.diffuse", 1.0f,1.0f,1.0f);
-//        ourShader.setVec3("material.specular", 0.5f,0.5f,0.5f);
 
         ourShader.setVec3("dirLight.direction",programState->directDirection);
          ourShader.setVec3("dirLight.ambient",programState->directAmbient);
@@ -482,7 +512,6 @@ int main()
         ourShader.setFloat("pointLights[1].quadratic", programState->pointQuadratic);
         // point light 3
         ourShader.setVec3("pointLights[2].position", pointLightPositions[2]);
-  //      ourShader.setVec3("pointLights[2].color",lightColors[2]);
         ourShader.setVec3("pointLights[2].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[2].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[2].specular", programState->pointSpecular);
@@ -491,7 +520,6 @@ int main()
         ourShader.setFloat("pointLights[2].quadratic", programState->pointQuadratic);
         // point light 4
         ourShader.setVec3("pointLights[3].position", pointLightPositions[3]);
-//        ourShader.setVec3("pointLights[3].color",lightColors[3]);
         ourShader.setVec3("pointLights[3].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[3].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[3].specular", programState->pointSpecular);
@@ -501,7 +529,6 @@ int main()
 
          // point light 5
         ourShader.setVec3("pointLights[4].position", pointLightPositions[4]);
-//        ourShader.setVec3("pointLights[4].color",lightColors[3]);
         ourShader.setVec3("pointLights[4].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[4].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[4].specular", programState->pointSpecular);
@@ -511,7 +538,6 @@ int main()
 
          // point light 6
         ourShader.setVec3("pointLights[5].position", pointLightPositions[5]);
-//        ourShader.setVec3("pointLights[3].color",lightColors[3]);
         ourShader.setVec3("pointLights[5].ambient", programState->pointAmbient);
         ourShader.setVec3("pointLights[5].diffuse", programState->pointDiffuse);
         ourShader.setVec3("pointLights[5].specular", programState->pointSpecular);
@@ -521,13 +547,11 @@ int main()
 
 
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+
         glm::mat4 model = glm::mat4 (1.0f);
 
         ourShader.use();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+
         ourShader.setMat4("model", model);
 
 
@@ -679,6 +703,19 @@ int main()
         glDepthFunc(GL_LESS);
 
 
+        // load hdr
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        hdrShader.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffer);
+        hdrShader.setBool("hdr", hdr);
+        hdrShader.setFloat("exposure", exposure);
+        renderQuad();
+
+        //std::cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << std::endl;
+
+
         if(programState->ImGuiEnabled){
             drawImgui(programState);
         }
@@ -689,6 +726,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
@@ -711,9 +749,37 @@ int main()
     return 0;
 }
 
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -736,6 +802,27 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
     {
         blinnKeyPressed = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !hdrKeyPressed)
+    {
+        hdr = !hdr;
+        hdrKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+    {
+        hdrKeyPressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    {
+        if (exposure > 0.0f)
+            exposure -= 0.001f;
+        else
+            exposure = 0.0f;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        exposure += 0.001f;
     }
 
 }
