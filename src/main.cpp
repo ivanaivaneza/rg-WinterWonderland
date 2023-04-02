@@ -45,7 +45,6 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 struct PointLight {
     glm::vec3 position;
@@ -209,8 +208,8 @@ int main()
     putokaz.SetShaderTextureNamePrefix("material.");
     Model pingvin(FileSystem::getPath("resources/objects/Pingvin/penguin/penguin.obj"), true);
     pingvin.SetShaderTextureNamePrefix("material.");
-    //Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"));
-    //dedaMraz.SetShaderTextureNamePrefix("material.");
+//    Model dedaMraz(FileSystem::getPath("resources/objects/Santa/dedamraz.obj"),true);
+//    dedaMraz.SetShaderTextureNamePrefix("material.");
 
 
 //-4.6f,-1.25f,3.5f
@@ -679,12 +678,12 @@ int main()
         poklonShader.setMat4("projection",projection);
         poklonShader.setMat4("view",view);
 
-        poklonShader.setVec3("light.position", lightPos);
+        poklonShader.setVec3("light.position", -5.0f,-1.5f,-3.0f);
         poklonShader.setVec3("viewPos", camera.Position);
 
         // light properties
         poklonShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        poklonShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        poklonShader.setVec3("light.diffuse", 0.5f, 1.5f, 0.5f);
         poklonShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // material properties
@@ -696,7 +695,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
         model = glm::mat4(1.0f);
-        model = glm::translate(model,glm::vec3(-1.0f,-0.5f,0.3f));
+        model = glm::translate(model,glm::vec3(-5.0f,-1.4f,-3.0f));
         model = glm::scale(model,glm::vec3(0.4f,0.4f,0.4f));
         //model = glm::rotate(model,glm::radians((float)-65),glm::vec3(0.0f,1.0f,0.0f));
         poklonShader.setMat4("model",model);
