@@ -41,6 +41,8 @@ ImGui:\
 ---
 ## Resursi:
 Svi objekti su skinuti sa [CGTrader](https://www.cgtrader.com/) , [Sketchfab](https://sketchfab.com)\
+Skoro svi su doradjivani u Blender-u.
+
 [Ostrvo](https://www.cgtrader.com/free-3d-models/exterior/landscape/floating-island-low-poly-modeling/)\
 [Snesko](https://www.cgtrader.com/free-3d-models/character/fantasy-character/snowman-free-3d-model)\
 [Putokaz](https://sketchfab.com/3d-models/3december-5-2018-north-pole-322f25e9f07a42a78e1ed9f1a7286641)\
