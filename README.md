@@ -33,6 +33,8 @@ Ukljucivanje/Iskljucivanje:\
 
 `E` Povecavanje exposure-a\
 `Q` Smanjivanje exposure-a
+
+
 ---
 ImGui:\
 `F1` otvaranje/zatvaranje ImGui prozora
