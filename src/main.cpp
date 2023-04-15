@@ -151,7 +151,6 @@ int main()
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    // TODO: vidi ovo dole
    // glEnable(GL_BLEND);
    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -169,8 +168,6 @@ int main()
     // ------------------------------------
     Shader ourShader("resources/shaders/verShader.vs",
                      "resources/shaders/fragShader.fs");
-    Shader poklonShader("resources/shaders/poklon.vs",
-                        "resources/shaders/poklon.fs");
     Shader skyboxShader("resources/shaders/skybox.vs",
                         "resources/shaders/skybox.fs");
     Shader flakeShader("resources/shaders/flake.vs",
@@ -403,8 +400,6 @@ int main()
     ourShader.setInt("material.texture_diffuse1",0);
     ourShader.setInt("material.texture_specular1",1);
 
-    /*poklonShader.use();
-    poklonShader.setInt("material.diffuse",0);*/
 
     skyboxShader.use();
     skyboxShader.setInt("skybox",0);
@@ -664,23 +659,6 @@ int main()
         //renderovanje poklona
         //glEnable(GL_CULL_FACE);
         //glCullFace(GL_BACK);
-        /*poklonShader.use();
-        poklonShader.setMat4("projection",projection);
-        poklonShader.setMat4("view",view);
-
-        poklonShader.setVec3("light.direction", -5.0f,-1.5f,-3.0f);
-        poklonShader.setVec3("viewPos", camera.Position);
-
-        // light properties
-        poklonShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        poklonShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        poklonShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-        // material properties
-        poklonShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-        poklonShader.setFloat("material.shininess", 64.0f);*/
-
-
         glBindVertexArray(VAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
@@ -774,7 +752,9 @@ int main()
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &skyboxVAO);
-    glDeleteBuffers(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVBO);
+    glDeleteVertexArrays(1,&skyboxVAO);
+    glDeleteBuffers(1,&transparentVBO);
 
     programState->SaveToDisk("resources/programState.txt");
 

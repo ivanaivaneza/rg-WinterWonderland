@@ -1,14 +1,13 @@
 
-# Projekat: Winter Wonderland
+# Projekat: Winter Wonderland![Screenshot from 2023-04-03 19-14-46.png](resources%2Fscreenshot%2FScreenshot%20from%202023-04-03%2019-14-46.png)
 Projekat iz racunarske grafike\
-Koriscen je skelet projekta [project base](https://github.com/matf-racunarska-grafika/project_base) kao i materijali iz [LearnOpenGL](https://github.com/matf-racunarska-grafika/LearnOpenGL.git)  repozitorijuma.
-
+Koriscen je skelet projekta [project base](https://github.com/matf-racunarska-grafika/project_base) kao i materijali iz [LearnOpenGL](https://github.com/matf-racunarska-grafika/LearnOpenGL.git)  repozitorijuma.\
+[Video](https://youtu.be/93Htx2g3Ph4)\
 Implementirane su sve obavezne teme.\
 Dodatne teme:
 
 Iz grupe A:
 - [x] Cubemaps (Skybox)
-- [x] Framebuffers (Blur)
 
 Iz grupe B:
 - [x] HDR
